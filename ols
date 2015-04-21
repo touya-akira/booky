@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+
+import json
+import saxo
+
+@saxo.pipe
+def ols(arg):
+        if not arg:
+                return "needs parameter!"
+        url = "http://openlibrary.org/search.json"
+        page = saxo.request(url, query={"title": arg})
+        data = json.loads(page["text"])
+        defs = data["docs"]
+        if not defs:
+                return "Sorry, no match found."
+        return defs[0]["title_suggest"].replace("\r\n", " ")
