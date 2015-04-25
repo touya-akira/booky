@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+
+import os
+import json
+import saxo
+
+bookurl = "https://openlibrary.org/api/books"
+
+def optformat(arg):
+	format = "olid"
+	if arg.startswith("-"):
+		try:
+			format, arg = arg.split(" ", 1)
+		except ValueError:
+			return "nop", arg
+	if format.lower() == "-isbn":
+		format = "isbn"
+	else: format = "olid"
+	return format, arg
+
+
+@saxo.command()
+def ols(arg):
+	format, arg = optformat(arg)
+	format = format or "olid"
+	if (not arg or format == "nop"):
+		return "Usage: .book [-olid|-isbn] <OLID/ISBN>"
+	if format == "isbn":
+		page = saxo.request(bookurl, query={"bibkeys": 'ISBN:%s' % arg, 'jscmd':'details', 'format': 'json'})
+		data = json.loads(page["text"])
+		ref = "ISBN:%s" % arg
+		defs = data[ref]
+		try:
+			olid = defs["details"]["identifiers"]["openlibrary"][0]
+		except KeyError:
+			olid = "not found"
+		title = defs["details"]["title"]
+		author = defs["details"]["authors"][0]["name"]
+		greads = defs["details"]["identifiers"]["goodreads"][0] or "N/A"
+		olurl = defs["info_url"] or "N/A"
+		try:
+			pages = defs["details"]["number_of_pages"] 
+		except KeyError:
+			pages = "n/a"
+		try:
+			weight = str(defs["details"]["weight"])
+		except KeyError:
+			weight = "N/A"
+		revision = str(defs["details"]["revision"]) 
+		try:
+			notes = defs["details"]["notes"]
+		except KeyError:
+			notes = "N/A"
+		try:
+			description = defs["details"]["description"] 
+		except KeyError:
+			description = "N/A"
+		output = "\002Title:\002 %s | \002Author:\002 %s | \002Pages:\002 %s | \002Revision:\002 %s | \002Weight:\002 %s | \002Notes:\002 %s | \002Description:\002 %s" % (title, author, pages, revision, weight, notes, description)
+		saxo.client("send", "PRIVMSG", os.environ.get("SAXO_SENDER"), output)
+		return 
+	else:
+		page = saxo.request(bookurl, query={"bibkeys": 'OLID:%s' % arg, 'jscmd':'details', 'format': 'json'})
+		data = json.loads(page["text"])
+		ref = "OLID:%s" % arg
+		defs = data[ref]
+		try:
+			isbn = defs["details"]["identifiers"]["isbn_13"][0]
+		except KeyError:
+			isbn = "not found"
+		title = defs["details"]["title"]
+		try:
+			author = defs["details"]["authors"][0]["name"]
+		except:
+			author = "N/A"
+		try:
+			greads = defs["details"]["identifiers"]["goodreads"][0]
+		except KeyError:
+			greads = "N/A"
+		try: 
+			olurl = defs["info_url"] 
+		except KeyError:
+			olurl = "N/A"
+		try:
+			pages = defs["details"]["number_of_pages"]
+		except KeyError:
+			pages = "N/A"		
+		try:
+			weight = str(defs["details"]["weight"])
+		except KeyError:
+			weight = "N/A"
+		revision = str(defs["details"]["revision"])
+		try:
+			notes = defs["details"]["notes"]
+		except KeyError:
+			notes = "N/A"
+		try:
+			description = defs["details"]["description"] 
+		except KeyError:
+			description = "N/A"
+		output = "\002Title:\002 %s | \002Author:\002 %s | \002Pages:\002 %s | \002Revision:\002 %s | \002Weight:\002 %s | \002Notes:\002 %s | \002Description:\002 %s" % (title, author, pages, revision, weight, notes, description)
+		saxo.client("send", "PRIVMSG", os.environ.get("SAXO_SENDER"), output)
+		return 
