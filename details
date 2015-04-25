@@ -4,31 +4,41 @@ import os
 import json
 import saxo
 
+class FormatException(Exception):
+  pass
+
 bookurl = "https://openlibrary.org/api/books"
 
-def optformat(arg):
-	format = "olid"
-	if arg.startswith("-"):
-		try:
-			format, arg = arg.split(" ", 1)
-		except ValueError:
-			return "nop", arg
-	if format.lower() == "-isbn":
-		format = "isbn"
-	else: format = "olid"
-	return format, arg
-
-
+def parse_book_command(command):
+  if command.startswith("-"):
+    try:
+      id_format, id_value = command.split(" ", 1)
+    except ValueError:
+      raise FormatError("Invalid book identifier format")
+    
+    # Lowercase and cut off the dash at the start
+    id_format = id_format.lower()[1:]
+    
+    return id_format, id_value
+  else:
+    return "olid", command
+ 
 @saxo.command()
-def ols(arg):
-	format, arg = optformat(arg)
-	format = format or "olid"
-	if (not arg or format == "nop"):
-		return "Usage: .book [-olid|-isbn] <OLID/ISBN>"
-	if format == "isbn":
-		page = saxo.request(bookurl, query={"bibkeys": 'ISBN:%s' % arg, 'jscmd':'details', 'format': 'json'})
+def find_book(arg):
+	usage = "Usage: .book [-olid|-isbn] <OLID/ISBN>"
+	if not arg:
+		return usage
+	try:
+		id_format, id_value = parse_book_command(arg)
+	except FormatError:
+		return usage
+	if id_format != ("isbn" or "olid"):
+		output = "\002Unsupported format.\002 " + usage
+		return output
+	if id_format == "isbn":
+		page = saxo.request(bookurl, query={"bibkeys": 'ISBN:%s' % id_value, 'jscmd':'details', 'format': 'json'})
 		data = json.loads(page["text"])
-		ref = "ISBN:%s" % arg
+		ref = "ISBN:%s" % id_value
 		defs = data[ref]
 		try:
 			olid = defs["details"]["identifiers"]["openlibrary"][0]
@@ -59,9 +69,9 @@ def ols(arg):
 		saxo.client("send", "PRIVMSG", os.environ.get("SAXO_SENDER"), output)
 		return 
 	else:
-		page = saxo.request(bookurl, query={"bibkeys": 'OLID:%s' % arg, 'jscmd':'details', 'format': 'json'})
+		page = saxo.request(bookurl, query={"bibkeys": 'OLID:%s' % id_value, 'jscmd':'details', 'format': 'json'})
 		data = json.loads(page["text"])
-		ref = "OLID:%s" % arg
+		ref = "OLID:%s" % id_value
 		defs = data[ref]
 		try:
 			isbn = defs["details"]["identifiers"]["isbn_13"][0]
