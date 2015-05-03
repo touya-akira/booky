@@ -19,7 +19,8 @@ userDict = {
     'gridcube': '30092396',
     'heddle': '12181320',
     'lif': '6176359',
-    'bld1': '4640099'
+    'bld1': '4640099',
+    'touya': '41315361'
 }
 
 userShelf = ('https://www.goodreads.com/review/list/', '?shelf=currently-reading')
