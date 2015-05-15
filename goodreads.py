@@ -1,6 +1,7 @@
 import xmltodict
 import urllib.request
 import urllib.parse
+import re
 from bs4 import BeautifulSoup
 
 apiURL = 'https://www.goodreads.com/search/index.xml?'
@@ -20,7 +21,14 @@ userDict = {
     'heddle': '12181320',
     'lif': '6176359',
     'bld1': '4640099',
-    'touya': '41315361'
+    'touya': '41315361',
+    'gigahurt': '1777204',
+    'd4lek': '39512463',
+    'nalkri': '7019867',
+    'elench': '7019867',
+    'ai-terminal': '42802442',
+    'goomba_': '1244196',
+    'lorax': '43065268'
 }
 
 userShelf = ('https://www.goodreads.com/review/list/', '?shelf=currently-reading')
@@ -112,18 +120,24 @@ def userCurrent(name):
         soup = BeautifulSoup(html)
         table = soup.find_all(id='booksBody')[0]
         # bookElems = (elem for elem in table.contents if elem != '\n')
-        bookElem = table.contents[1]
-        titleElem = bookElem.find(class_='title')
-        bookName = titleElem.contents[1].contents[1].string.strip()
-        return name + ' is reading: ' + search(bookName)
-    except:
+        numBooks = soup.select('.h1Shelf .greyText')[0].text
+        numBooks = re.search('[0-9]+', numBooks).group(0)
+        retString = '{} is reading {} books.'.format(name, numBooks)
+        if (numBooks != '0'):
+            bookElem = table.contents[1]
+            titleElem = bookElem.find(class_='title')
+            div = titleElem.contents[1]
+            link = div.contents[1]
+            titleList = list(link.stripped_strings)
+            bookName = ' '.join(titleList).strip()
+            retString += ' Most recently added: {}'.format(search(bookName))
+        return retString
+    except Exception as e:
         return 'No books found. The user\'s profile might be private.'
-        raise
+        raise e
 
 
 def main():
-    # name = input('Enter the name of the book: ')
-    # print(search(name))
     print(userCurrent('Amaan'))
     return 0
 
