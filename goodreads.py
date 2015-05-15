@@ -119,7 +119,6 @@ def userCurrent(name):
     try:
         soup = BeautifulSoup(html)
         table = soup.find_all(id='booksBody')[0]
-        # bookElems = (elem for elem in table.contents if elem != '\n')
         numBooks = soup.select('.h1Shelf .greyText')[0].text
         numBooks = re.search('[0-9]+', numBooks).group(0)
         retString = '{} is reading {} books.'.format(name, numBooks)
@@ -133,12 +132,17 @@ def userCurrent(name):
             retString += ' Most recently added: {}'.format(search(bookName))
         return retString
     except Exception as e:
-        return 'No books found. The user\'s profile might be private.'
+        errorBox = soup.find(id='privateProfile')
+        # print(soup)
+        if errorBox:
+            return '{}\'s profile is private.'.format(name)
+        else:
+            return 'I have no idea what went wrong. Amaan should look into it.'
         raise e
 
 
 def main():
-    print(userCurrent('Amaan'))
+    print(userCurrent('heddle'))
     return 0
 
 if __name__ == '__main__':
